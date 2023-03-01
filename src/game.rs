@@ -188,8 +188,8 @@ impl Game {
         Uniform::compute(&cell_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
         Uniform::compute(&diffuse_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
 
-        let vert = Shader::from_vertex_source(include_str!("shaders/triangle.vert")).unwrap();
-        let frag = Shader::from_frag_source(include_str!("shaders/triangle.frag")).unwrap();
+        let vert = Shader::from_vertex_source(include_str!("shaders/screen.vert")).unwrap();
+        let frag = Shader::from_frag_source(include_str!("shaders/screen.frag")).unwrap();
 
         let program = Program::from_shaders(&[vert, frag]).unwrap();
 
