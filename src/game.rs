@@ -150,7 +150,7 @@ impl Game {
         );
 
         // run compute
-        let diffuse_compute = ComputeProgram::from_source(include_str!("diffusion.glsl")).unwrap();
+        let diffuse_compute = ComputeProgram::from_source(include_str!("shaders/diffusion.glsl")).unwrap();
 
         #[repr(C, packed)]
         struct Cell((f32, f32), f32);
@@ -183,13 +183,13 @@ impl Game {
             BufferUsage::StaticDraw,
         );
 
-        let cell_compute = ComputeProgram::from_source(include_str!("cell.glsl")).unwrap();
+        let cell_compute = ComputeProgram::from_source(include_str!("shaders/cell.glsl")).unwrap();
 
         Uniform::compute(&cell_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
         Uniform::compute(&diffuse_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
 
-        let vert = Shader::from_vertex_source(include_str!("triangle.vert")).unwrap();
-        let frag = Shader::from_frag_source(include_str!("triangle.frag")).unwrap();
+        let vert = Shader::from_vertex_source(include_str!("shaders/triangle.vert")).unwrap();
+        let frag = Shader::from_frag_source(include_str!("shaders/triangle.frag")).unwrap();
 
         let program = Program::from_shaders(&[vert, frag]).unwrap();
 
