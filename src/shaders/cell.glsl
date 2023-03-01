@@ -29,23 +29,19 @@ const float SENSOR_OFFSET_DIST = 10;
 
 const float POSITION_EPSILON = 1.;
 
-uint hash(uint state)
+uint rand32Bits(uint seed)
 {
-    state ^= 2747636419u;
-    state *= 2654435769u;
-    state ^= state >> 16;
-    state *= 2654435769u;
-    state ^= state >> 16;
-    state *= 2654435769u;
-    return state;
+    seed ^= 2747636419u;
+    seed *= 2654435769u;
+    seed ^= seed >> 16;
+    seed *= 2654435769u;
+    seed ^= seed >> 16;
+    seed *= 2654435769u;
+    return seed;
 }
 
-float rand01(uint rand) {
-    return hash(rand) / 4294697295.;
-}
-
-float lerp(float a, float b, float t) {
-    return a + (b - a) * t;
+float randNormalized(uint rand) {
+    return rand32Bits(rand) / 4294697295.;
 }
 
 float sense(CellData cell, float offset) {
@@ -71,13 +67,11 @@ float sense(CellData cell, float offset) {
 void main() {
     uint id = gl_GlobalInvocationID.x;// get value stored in the image
 
-    //    vec2 pos = position[id];
-    //    ivec2 pos = ivec2(int(pos.x), int(pos.y));
     CellData cell = cells[id];
 
     ivec2 ipos = ivec2(cell.position);
 
-    uint randIndex = int((cell.angle + deltaTime) * 1000. + ipos.x + ipos.y + id.x);
+    uint randSeed = int((cell.angle + deltaTime) * 1000. + ipos.x + ipos.y + id.x);
 
     vec2 direction = vec2(cos(cell.angle), sin(cell.angle));
     cell.position += deltaTime * CELL_SPEED * direction;
@@ -86,32 +80,30 @@ void main() {
     if (cell.position.x >= WIDTH || cell.position.y >= HEIGHT || cell.position.x < 0 || cell.position.y < 0) {
         cell.position = clamp(cells[id].position, vec2(POSITION_EPSILON), windowSize - vec2(POSITION_EPSILON));
         cell.position = windowSize / 2.;
-        cell.angle = TAU * rand01(randIndex++);
+        cell.angle = TAU * randNormalized(randSeed++);
     }
 
     // steering
-    float weightForward = sense(cell, 0);
-    float weightLeft = sense(cell, SENSOR_ANGLE_SPACING);
-    float weightRight = sense(cell, -SENSOR_ANGLE_SPACING);
+    float forward = sense(cell, 0);
+    float left = sense(cell, SENSOR_ANGLE_SPACING);
+    float right = sense(cell, -SENSOR_ANGLE_SPACING);
+    float randomSteer = randNormalized(randSeed);
 
-    float steerRandom = rand01(randIndex);
-
-    if (weightForward > weightLeft && weightForward > weightRight) {
-        cell.angle += 0.;
-    } else if (weightForward < weightLeft && weightForward < weightRight) {
-        cell.angle += (steerRandom - .5) * 2 * TURN_SPEED * deltaTime;
-    } else if (weightRight > weightLeft) {
-        cell.angle -= steerRandom * TURN_SPEED * deltaTime;
-    } else if (weightLeft > weightRight) {
-        cell.angle += steerRandom * TURN_SPEED * deltaTime;
+    if (forward < left && forward < right) {
+        // randomly steer of right & left are around equal
+        cell.angle += (randomSteer - .5) * 2 * TURN_SPEED * deltaTime;
+    } else if (right > left) {
+        // ster right if right sensor is larger
+        cell.angle -= randomSteer * TURN_SPEED * deltaTime;
+    } else if (left > right) {
+        // steer left if left sensor is larger
+        cell.angle += randomSteer * TURN_SPEED * deltaTime;
     }
 
     cells[id] = cell;
 
-    //        imageStore(trailMap, ipos, vec4(1., imageLoad(trailMap, ipos).yzw));
-
     vec4 trail = imageLoad(trailMap, ipos);
-    trail.x = 1.;
-    trail.y += .3;
+    trail.x = 1.;// trailmap
+    trail.y += .3;// presence
     imageStore(trailMap, ipos, trail);
 }

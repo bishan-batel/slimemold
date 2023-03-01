@@ -5,7 +5,7 @@ layout(rgba32f, binding = 0) uniform image2D trailMap;
 uniform float deltaTime;
 
 const float diffuseSpeed = 5.0;
-const float evaporationSpeed = 0.2;
+const float decaySpeed = 0.2;
 
 uniform vec2 windowSize;
 #define WIDTH windowSize.x
@@ -49,15 +49,14 @@ void main() {
 
     float avg = sum / 9.;
 
-    val.r = mix(val.r, avg, diffuseSpeed * deltaTime);
-    //    val.g = lerp(val.g, avg.g, diffuseSpeed * deltaTime);
-    //    val.b = lerp(val.b, avg.b, diffuseSpeed * deltaTime);
+    // only diffuse the trailmap
+    val.x = mix(val.r, avg, diffuseSpeed * deltaTime);
 
 
-    // evaporation
-    val.r = max(0., val.r - evaporationSpeed * deltaTime);
+    // trail decay
+    val.r = max(0., val.r - decaySpeed * deltaTime);
 
-    //    val.b *= .5 * deltaTime;
+    // reset presence
     val.y = 0.;
 
     imageStore(trailMap, pixel, val);
