@@ -14,7 +14,7 @@ use sdl2::keyboard::Scancode;
 use sdl2::mouse::MouseWheelDirection;
 use sdl2::sys::rand;
 use sdl2::video::{GLContext, GLProfile, Window};
-use crate::CELL_COUNT;
+use crate::{CELL_COUNT};
 
 use crate::render::color::{ColorInternal, ColorRepr};
 use crate::render::GlDataType;
@@ -132,8 +132,10 @@ impl Game {
         // let img = img.resize_exact(self.window_size.0 as u32, self.window_size.1 as u32, FilterType::Gaussian);
         // let mut img = img.into_rgba32f();
 
-        let img =
-            Rgba32FImage::new(self.window_size.0 as u32, self.window_size.1 as u32);
+        let img = Rgba32FImage::new(
+            self.window_size.0 as u32,
+            self.window_size.1 as u32,
+        );
 
         Texture::set_active(0);
         let tex = Texture::texture_2d();
@@ -157,17 +159,18 @@ impl Game {
 
 
         let mut rng = thread_rng();
-        for _ in 0..CELL_COUNT {
+        for i in 0..CELL_COUNT {
             use rand::prelude::*;
 
             let pos_ang = rng.gen::<f32>() * consts::TAU;
-            let dist = rng.gen::<f32>() * self.window_size.1 as f32 / 4.;
+            // let dist = rng.gen::<f32>() * img.height() as f32 / 4.;
+            let dist = img.height() as f32 / 4.;
 
-            let x = pos_ang.cos() * dist + self.window_size.0 as f32 / 2.;
-            let y = pos_ang.sin() * dist + self.window_size.1 as f32 / 2.;
+            let x = pos_ang.cos() * dist + img.width() as f32 / 2.;
+            let y = pos_ang.sin() * dist + img.height() as f32 / 2.;
 
-            // let x = self.window_size.0 as f32 / 2.;
-            // let y = self.window_size.1 as f32 / 2.;
+            // let x = img.width() as f32 / 2.;
+            // let y = img.height() as f32 / 2.;
 
             let angle: f32 = rng.gen::<f32>() * consts::TAU;
             // let angle: f32 = consts::TAU / 2.;
@@ -181,6 +184,9 @@ impl Game {
         );
 
         let cell_compute = ComputeProgram::from_source(include_str!("cell.glsl")).unwrap();
+
+        Uniform::compute(&cell_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
+        Uniform::compute(&diffuse_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
 
         let vert = Shader::from_vertex_source(include_str!("triangle.vert")).unwrap();
         let frag = Shader::from_frag_source(include_str!("triangle.frag")).unwrap();
@@ -256,13 +262,12 @@ impl Game {
         self.cam_pos.0 += self.cam_pos_vel.0;
         self.cam_pos.1 += self.cam_pos_vel.1;
 
-        self.cam_pos.0 = self.cam_pos.0.clamp(1. / self.cam_zoom - 1., 1. / (self.cam_zoom) + 0.5);
-        self.cam_pos.1 = self.cam_pos.1.clamp(1. / self.cam_zoom - 1., 1. / (self.cam_zoom) + 0.5);
-
-        println!("{:?}", self.cam_pos);
-
         self.cam_zoom_vel *= ZOOM_FRICTION;
         self.cam_zoom = (self.cam_zoom + self.cam_zoom_vel * delta).clamp(1., 5.);
+
+        let v = 1. / self.cam_zoom - 1.;
+        self.cam_pos.0 = self.cam_pos.0.clamp(v, -v);
+        self.cam_pos.1 = self.cam_pos.1.clamp(v, -v);
     }
 
     pub unsafe fn render(&mut self, mut delta: f64) {
@@ -272,10 +277,6 @@ impl Game {
             Texture::set_active(0);
             state.trail_tex.bind();
 
-            Uniform::compute(&state.cell_compute, "deltaTime").set_float(delta as f32);
-            state.cell_buffer.bind_base(1);
-            state.cell_compute.execute(CELL_COUNT / 1024, 1, 1);
-
             // diffuse compute shader
             Uniform::compute(&state.diffuse_compute, "deltaTime").set_float(delta as f32);
             Texture::set_active(0);
@@ -283,11 +284,16 @@ impl Game {
             state.trail_tex.bind_image_texture(ColorInternal::RGBA32F, ImageAccess::ReadWrite);
             state.diffuse_compute.execute(self.window_size.0 as u32 / 8, self.window_size.1 as u32 / 8, 1);
 
+            Uniform::compute(&state.cell_compute, "deltaTime").set_float(delta as f32);
+            state.cell_buffer.bind_base(1);
+            state.cell_compute.execute(CELL_COUNT / 1024, 1, 1);
+
+
             state.screen_vao.bind();
             state.screen_program.set_used();
 
-            Uniform::program(&state.screen_program, "zoom").set_float(self.cam_zoom);
             Uniform::program(&state.screen_program, "camPos").set_vec2(self.cam_pos);
+            Uniform::program(&state.screen_program, "zoom").set_float(self.cam_zoom);
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
         }
         self.window.gl_swap_window();

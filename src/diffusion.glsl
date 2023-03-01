@@ -4,11 +4,12 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(rgba32f, binding = 0) uniform image2D trailMap;
 uniform float deltaTime;
 
-const float diffuseSpeed = 10.0;
+const float diffuseSpeed = 5.0;
 const float evaporationSpeed = 0.2;
 
-const int WIDTH = 1920;
-const int HEIGHT = 1080;
+uniform vec2 windowSize;
+#define WIDTH windowSize.x
+#define HEIGHT windowSize.x
 
 uint hash(uint state)
 {
@@ -55,6 +56,9 @@ void main() {
 
     // evaporation
     val.r = max(0., val.r - evaporationSpeed * deltaTime);
+
+    //    val.b *= .5 * deltaTime;
+    val.y = 0.;
 
     imageStore(trailMap, pixel, val);
 }

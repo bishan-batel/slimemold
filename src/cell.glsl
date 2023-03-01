@@ -14,17 +14,20 @@ layout(std430, binding=1) buffer Cell {
 
 uniform float deltaTime;
 
-const int WIDTH = 1920;
-const int HEIGHT = 1080;
+uniform vec2 windowSize;
+#define WIDTH windowSize.x
+#define HEIGHT windowSize.x
 
 const float TAU = 6.283185307179586;
 const float PI = TAU / 2;
 
-const float CELL_SPEED = 40.;
+const float CELL_SPEED = 80.;
 const float SENSOR_ANGLE_SPACING = PI / 6.;
-const float TURN_SPEED = 20.;
-const int SENSOR_SIZE = 2;
-const float SENSOR_OFFSET_DIST = 4;
+const float TURN_SPEED = 200.;
+const int SENSOR_SIZE = 3;
+const float SENSOR_OFFSET_DIST = 10;
+
+const float POSITION_EPSILON = 1.;
 
 uint hash(uint state)
 {
@@ -79,8 +82,10 @@ void main() {
     vec2 direction = vec2(cos(cell.angle), sin(cell.angle));
     cell.position += deltaTime * CELL_SPEED * direction;
 
+
     if (cell.position.x >= WIDTH || cell.position.y >= HEIGHT || cell.position.x < 0 || cell.position.y < 0) {
-        cell.position = cells[id].position;
+        cell.position = clamp(cells[id].position, vec2(POSITION_EPSILON), windowSize - vec2(POSITION_EPSILON));
+        cell.position = windowSize / 2.;
         cell.angle = TAU * rand01(randIndex++);
     }
 
@@ -107,5 +112,6 @@ void main() {
 
     vec4 trail = imageLoad(trailMap, ipos);
     trail.x = 1.;
+    trail.y += .3;
     imageStore(trailMap, ipos, trail);
 }

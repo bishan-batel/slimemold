@@ -7,8 +7,8 @@ extern crate gl;
 use std::time::Instant;
 use crate::game::Game;
 
-pub const FPS: f64 = 144.;
-const CELL_COUNT: u32 = 1_000_000;
+const FPS: f64 = 144.;
+const CELL_COUNT: u32 = 1_00_000;
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
