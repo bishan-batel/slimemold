@@ -1,0 +1,70 @@
+#version 430
+layout(local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
+
+struct CellData {
+    vec2 position;
+    float angle;
+    vec3 mask;
+};
+
+layout(std430, binding=0) buffer Cell {
+    CellData cells[];
+};
+
+uniform vec2 windowSize;
+uniform float globalRandomSeed;
+
+#define WIDTH windowSize.x
+#define HEIGHT windowSize.x
+
+const float TAU = 6.283185307179586;
+const float PI = TAU / 2;
+
+uint rand32Bits(uint seed)
+{
+    seed ^= 2747636419u;
+    seed *= 2654435769u;
+    seed ^= seed >> 16;
+    seed *= 2654435769u;
+    seed ^= seed >> 16;
+    seed *= 2654435769u;
+    return seed;
+}
+
+float rand(uint rand) {
+    return rand32Bits(rand) / 4294697295.;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;// get value stored in the image
+
+    uint seed = int(id.x + globalRandomSeed);
+
+    CellData cell;
+
+    vec2 center = windowSize / 2.;
+    //    cell.position = windowSize * vec2(rand(seed++), rand(seed++));
+
+    //    float posDist = windowSize.y / 5.;
+    float posDist = windowSize.y / 2. * rand(seed++);
+    float posAng = TAU * rand(seed++);
+    cell.position = center + vec2(cos(posAng), sin(posAng)) * posDist;
+
+
+    cell.angle = rand(seed++) * TAU;
+    cell.mask = vec3(0.);
+
+    //    cell.mask[int(rand(seed++) * 2)] = 1.;
+    //    cell.mask = cell.mask * 2. - vec3(1.);
+
+    cell.mask=vec3(1., 0., 0.);
+    //    cell.mask = vec3(1., 0.2, 1.) * pow(vec3(rand(seed++), rand(seed++), rand(seed++)), vec3(.5));
+
+    //    cell.mask = pow(vec3(rand(seed++), rand(seed++), rand(seed++)), vec3(.5));
+    //    if (rand(seed++) < 1 / 2.) {
+    //        cell.mask = vec3(.5);
+    //    }
+
+
+    cells[id] = cell;
+}

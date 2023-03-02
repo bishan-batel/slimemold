@@ -1,0 +1,22 @@
+cell_properties:
+  speed: 80.0
+  turn_speed: 80.0
+  sensor_angle_spacing: 30.0
+
+  sensor_size: 3
+  sensor_offset_dist: 10.0
+
+diffusion:
+  diffuseSpeed: 40.0
+  evaporationSpeed: 0.2
+
+species:
+  - red:
+      color_hex: "#00ff0"
+      mask: [ 1, 0, 0 ]
+  - green:
+      color_hex: "#00ff00"
+      mask: [ 0, 1, 0 ]
+  - blue:
+      color_hex: "#0000ff"
+      mask: [ 0, 0, 1 ]

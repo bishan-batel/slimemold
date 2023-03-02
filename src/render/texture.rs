@@ -49,7 +49,7 @@ impl Texture {
         }
     }
 
-    pub fn generate_mipmaps(&self) {
+    pub fn generate_mipmap(&self) {
         unsafe {
             gl::GenerateMipmap(self.target as GLenum)
         }
@@ -77,7 +77,6 @@ impl Texture {
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
         }
-
         tex
     }
 

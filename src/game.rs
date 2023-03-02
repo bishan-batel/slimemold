@@ -153,40 +153,35 @@ impl Game {
         let diffuse_compute = ComputeProgram::from_source(include_str!("shaders/diffusion.glsl")).unwrap();
 
         #[repr(C, packed)]
-        struct Cell((f32, f32), f32);
-
-        let mut cell_data = Vec::with_capacity(CELL_COUNT as usize);
-
-
-        let mut rng = thread_rng();
-        for i in 0..CELL_COUNT {
-            use rand::prelude::*;
-
-            let pos_ang = rng.gen::<f32>() * consts::TAU;
-            // let dist = rng.gen::<f32>() * img.height() as f32 / 4.;
-            let dist = img.height() as f32 / 4.;
-
-            let x = pos_ang.cos() * dist + img.width() as f32 / 2.;
-            let y = pos_ang.sin() * dist + img.height() as f32 / 2.;
-
-            // let x = img.width() as f32 / 2.;
-            // let y = img.height() as f32 / 2.;
-
-            let angle: f32 = rng.gen::<f32>() * consts::TAU;
-            // let angle: f32 = consts::TAU / 2.;
-            cell_data.push(Cell((x, y), angle));
+        struct Cell {
+            pos: (f32, f32),
+            angle: f32,
+            mask: (f32, f32, f32),
         }
 
-        let cell_buffer = BufferObject::with_data(
+        let cell_buffer = BufferObject::with_capacity::<Cell>(
             BufferType::ShaderStorage,
-            cell_data.as_slice(),
+            CELL_COUNT,
             BufferUsage::StaticDraw,
         );
 
-        let cell_compute = ComputeProgram::from_source(include_str!("shaders/cell.glsl")).unwrap();
+        let tex_size = (img.width() as f32, img.height() as f32);
 
-        Uniform::compute(&cell_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
-        Uniform::compute(&diffuse_compute, "windowSize").set_vec2((img.width() as f32, img.height() as f32));
+        {
+            let cell_init_compute = ComputeProgram::from_source(include_str!("shaders/cell_init.glsl")).unwrap();
+            cell_buffer.bind();
+            cell_buffer.bind_base(0);
+            Uniform::compute(&cell_init_compute, "windowSize").set_vec2(tex_size);
+
+            let rng = rand::random::<f32>();
+            Uniform::compute(&cell_init_compute, "globalRandomSeed").set_float(rng);
+
+            cell_init_compute.execute(CELL_COUNT as u32 / 1024, 1, 1);
+        }
+
+        let cell_compute = ComputeProgram::from_source(include_str!("shaders/cell.glsl")).unwrap();
+        Uniform::compute(&cell_compute, "windowSize").set_vec2(tex_size);
+        Uniform::compute(&diffuse_compute, "windowSize").set_vec2(tex_size);
 
         let vert = Shader::from_vertex_source(include_str!("shaders/screen.vert")).unwrap();
         let frag = Shader::from_frag_source(include_str!("shaders/screen.frag")).unwrap();
@@ -195,25 +190,25 @@ impl Game {
 
         #[repr(C, packed)]
         struct Vertex([f32; 2], [f32; 2]);
-        const VERTICES: [Vertex; 4] = [
+        const SCREEN_VERTS: [Vertex; 4] = [
             Vertex([-1., -1.], [0.0, 1.0]),
             Vertex([1., -1.], [1.0, 1.0]),
             Vertex([1., 1.], [1.0, 0.0]),
             Vertex([-1., 1.], [0.0, 0.0]),
         ];
 
-        const INDICES: [u32; 6] = [
+        const SCREEN_INDICES: [u32; 6] = [
             0, 1, 2,
             2, 3, 0
         ];
 
         let vbo = BufferObject::create_vbo(
-            &VERTICES,
+            &SCREEN_VERTS,
             BufferUsage::StaticDraw,
         );
 
         let mut index_buffer = BufferObject::gen(1, BufferType::ElementArray);
-        index_buffer.set_data(&INDICES, BufferUsage::StaticDraw);
+        index_buffer.set_data(&SCREEN_INDICES, BufferUsage::StaticDraw);
 
         let tri_vao = VertexArrayObject::new_arrays(&vbo, Some(&index_buffer), |a| {
             a.vector(GlDataType::Float, 2); // position
@@ -253,8 +248,9 @@ impl Game {
             dir.1 += 1.;
         }
 
-        self.cam_pos_vel.0 += (dir.0 * delta * ACC).clamp(-SPEED, SPEED);
-        self.cam_pos_vel.1 += (dir.1 * delta * ACC).clamp(-SPEED, SPEED);
+        let speed = SPEED / self.cam_zoom;
+        self.cam_pos_vel.0 += (dir.0 * delta * ACC / self.cam_zoom).clamp(-speed, speed);
+        self.cam_pos_vel.1 += (dir.1 * delta * ACC / self.cam_zoom).clamp(-speed, speed);
 
         self.cam_pos_vel.0 *= FRICTION;
         self.cam_pos_vel.1 *= FRICTION;
@@ -286,7 +282,7 @@ impl Game {
 
             Uniform::compute(&state.cell_compute, "deltaTime").set_float(delta as f32);
             state.cell_buffer.bind_base(1);
-            state.cell_compute.execute(CELL_COUNT / 1024, 1, 1);
+            state.cell_compute.execute(CELL_COUNT as u32 / 1024, 1, 1);
 
 
             state.screen_vao.bind();

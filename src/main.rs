@@ -8,7 +8,7 @@ use std::time::Instant;
 use crate::game::Game;
 
 const FPS: f64 = 144.;
-const CELL_COUNT: u32 = 1_00_000;
+const CELL_COUNT: usize = 1_000_000;
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
