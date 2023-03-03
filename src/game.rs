@@ -150,7 +150,7 @@ impl Game {
         );
 
         // run compute
-        let diffuse_compute = ComputeProgram::from_source(include_str!("shaders/diffusion.glsl")).unwrap();
+        let diffuse_compute = ComputeProgram::from_source(include_str!("shaders/diffusion.comp")).unwrap();
 
         #[repr(C, packed)]
         struct Cell {
@@ -168,7 +168,7 @@ impl Game {
         let tex_size = (img.width() as f32, img.height() as f32);
 
         {
-            let cell_init_compute = ComputeProgram::from_source(include_str!("shaders/cell_init.glsl")).unwrap();
+            let cell_init_compute = ComputeProgram::from_source(include_str!("shaders/cell_init.comp")).unwrap();
             cell_buffer.bind();
             cell_buffer.bind_base(0);
             Uniform::compute(&cell_init_compute, "windowSize").set_vec2(tex_size);
@@ -179,7 +179,7 @@ impl Game {
             cell_init_compute.execute(CELL_COUNT as u32 / 1024, 1, 1);
         }
 
-        let cell_compute = ComputeProgram::from_source(include_str!("shaders/cell.glsl")).unwrap();
+        let cell_compute = ComputeProgram::from_source(include_str!("shaders/cell.comp")).unwrap();
         Uniform::compute(&cell_compute, "windowSize").set_vec2(tex_size);
         Uniform::compute(&diffuse_compute, "windowSize").set_vec2(tex_size);
 

@@ -17,16 +17,16 @@ uniform float deltaTime;
 
 uniform vec2 windowSize;
 #define WIDTH windowSize.x
-#define HEIGHT windowSize.x
+#define HEIGHT windowSize.y
 
 const float TAU = 6.283185307179586;
 const float PI = TAU / 2;
 
-const float CELL_SPEED = 100.;
+const float CELL_SPEED = 50.;
 const float TURN_SPEED = 100.;
 const float SENSOR_ANGLE_SPACING = PI / 6.;
 const int SENSOR_SIZE = 2;
-const float SENSOR_OFFSET_DIST = 40;
+const float SENSOR_OFFSET_DIST = 8;
 
 const float POSITION_EPSILON = 1.;
 
@@ -105,18 +105,18 @@ void main() {
 
     vec4 trail = imageLoad(trailMap, ipos);
 
-    //    if (trail.a > 1000. && randNormalized(++randSeed) < .5) {
-    if (trail.a > 10000.) {
-        cell.mask= vec3(0.);
-
-        int i = int(round(randNormalized(randSeed++) * 2));
-        cell.mask[i] = 1.;
-    }
+    //        if (trail.a > 1000. && randNormalized(++randSeed) < .5) {
+    //    if (trail.a > 10000.) {
+    //        cell.mask= vec3(0.);
+    //        int i = int(round(randNormalized(randSeed++) * 2));
+    //        cell.mask[i] = 1.;
+    //    }
 
     cells[id] = cell;
 
     trail.xyz = max(trail.xyz, cell.mask);
     trail.w += 1.;
+
     //    trail.xyz = cell.mask;
 
     imageStore(trailMap, ipos, trail);

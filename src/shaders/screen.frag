@@ -29,8 +29,10 @@ vec4 lerp(vec4 a, vec4 b, float t) {
 void main() {
     vec4 tex = texture(tex, vertex.uv);
     //        w = w * exp((w - 1) * -1.);
-    //    w = w * exp((w - 1) * -.9);
+    //        w = w * exp((w - 1) * -.9);
+    //    tex.rgb *= exp((tex.rgb - vec3(1.) * -.9));
     //    w = w * w;
+    tex.rgb = tex.rgb * tex.rgb;
 
     //    color = vec4(mix(mix(EMPTY_COLOR, MID_COLOR, w), HIGH_COLOR, (1 / MID_HIGH_MULTIPLIER) * max(w - MID_HIGH_MULTIPLIER, 0)), 1.);
 
