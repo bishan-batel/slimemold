@@ -1,5 +1,5 @@
 #version 430
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout(local_size_x = 10, local_size_y = 10, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) uniform image2D trailMap;
 uniform float deltaTime;
@@ -8,8 +8,6 @@ const float diffuseSpeed = 100.0;
 const float decaySpeed = 0.1;
 
 uniform vec2 windowSize;
-#define WIDTH windowSize.x
-#define HEIGHT windowSize.x
 
 uint hash(uint state)
 {
@@ -30,6 +28,10 @@ void main() {
     // get position to read/write data from
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);// get value stored in the image
 
+    // if (pixel.x < 0 || pixel.y < 0 || pixel.x > WIDTH || pixel.y > HEIGHT) {
+    //     return; 
+    // }
+
 
     vec4 val = imageLoad(trailMap, pixel);// store new value in image
 
@@ -38,12 +40,12 @@ void main() {
 
     for (int offsetX = -1; offsetX <= 1; offsetX++) {
         for (int offsetY = -1; offsetY <= 1; offsetY++) {
-            int sampleX = pixel.x + offsetX;
-            int sampleY = pixel.y + offsetY;
+            ivec2 s = pixel + ivec2(offsetX, offsetY);
 
-            if (sampleX >= 0 && sampleX < WIDTH && sampleY >= 0 && sampleY < HEIGHT) {
-                sum += imageLoad(trailMap, ivec2(sampleX, sampleY));
-            }
+            // if (sampleX >= 0 && sampleX < WIDTH && sampleY >= 0 && sampleY < HEIGHT) {
+            // if (s >= ivec2(0) && s < windowSize)
+                sum += imageLoad(trailMap, s);
+            // }
         }
     }
 

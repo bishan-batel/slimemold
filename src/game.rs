@@ -1,12 +1,7 @@
 use std::collections::HashSet;
-use std::f32::consts;
-use std::mem::size_of;
 use std::ptr;
-use std::time::Instant;
 use gl::types::{GLint, GLsizei, GLsizeiptr, GLuint, GLvoid};
-use image::DynamicImage::ImageRgba32F;
 use image::{EncodableLayout, GenericImageView, Rgba32FImage};
-use image::imageops::FilterType;
 use rand::thread_rng;
 use sdl2::{EventPump, Sdl, VideoSubsystem};
 use sdl2::event::{Event, WindowEvent};
@@ -278,7 +273,7 @@ impl Game {
             Texture::set_active(0);
             state.trail_tex.bind();
             state.trail_tex.bind_image_texture(ColorInternal::RGBA32F, ImageAccess::ReadWrite);
-            state.diffuse_compute.execute(self.window_size.0 as u32 / 8, self.window_size.1 as u32 / 8, 1);
+            state.diffuse_compute.execute(self.window_size.0 as u32 / 10, self.window_size.1 as u32 / 10, 1);
 
             Uniform::compute(&state.cell_compute, "deltaTime").set_float(delta as f32);
             state.cell_buffer.bind_base(1);

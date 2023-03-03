@@ -47,7 +47,7 @@ void main() {
 
     //        float posDist = windowSize.y / 5.;
     //    float posDist = 0.;
-    float posDist = windowSize.y / 4. * rand(seed++);
+    float posDist = windowSize.y / 6. * rand(seed++);
     float posAng = TAU * rand(seed++);
     cell.position = center + vec2(cos(posAng), sin(posAng)) * posDist;
 
